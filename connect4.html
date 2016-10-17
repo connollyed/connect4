@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title> Connect 4 Using Canvas </title>
+    <style>
+    /**{ margin:0px; padding:0px}*/
+    </style>
+  </head>
+
+  <body>
+    <canvas id="game" height="700px" width="800px"><div>
+    <script type="text/javascript">
+    var NUM_OF_COLS = "8";
+    var NUM_OF_ROWS = "7";
+
+    window.onload = (function(){
+        "use strict";
+        // Main board array used to store represent the circles
+        // The array is composed of three strings "white, red and yellow"
+        // White represents Empty , Red is player 1 and yellow is player 2
+        var board = [];
+
+
+        var turn = 0;
+        //Initalise board to empty ie white
+
+        for(var row=0; row<NUM_OF_ROWS; row++){
+          board[row] = ["white","white","white","white","white","white","white","white"];
+        }
+
+        drawBackground();// Draw Blue Background
+        //Loop through board painting circles
+        for(var r=0; r<NUM_OF_ROWS; r++){
+          for(var c=0; c<NUM_OF_COLS; c++){
+            draw(r,c, board[r][c]);
+          }
+        }
+
+        // Add Mouse Event Listener
+        var canvas = document.getElementById("game");
+        canvas.addEventListener('click', function(evt) {
+          return function(canvas,board,evt){
+          var mousePos = getMousePos(canvas, evt);
+          //var message = 'Mouse position: ' + mousePos.x + ',' + mousePos.y;
+          //console.log(message);
+
+          var col = parseInt(mousePos.x / 100);
+          var row = parseInt(mousePos.y / 100);
+          //console.log("row: " + row + "\t col: " + col);
+
+          //Check whose turn it is. Place appropriate Colour piece
+          var colour = turn%2==0 ? "red" : "yellow";
+          if(dropPiece(board,col, colour)===-1){
+            turn--; //still same players turn so decrement
+          }
+
+
+          //Update the board because of new droped piece
+          drawBackground();// Draw Blue Background
+          //Loop through board painting circles
+          for(var r=0; r<NUM_OF_ROWS; r++){
+            for(var c=0; c<NUM_OF_COLS; c++){
+              draw(r,c, board[r][c]);
+            }
+          }
+
+          //Check for winner ie they have 4 in a row either horizontal,
+          //vertically or diagonally
+          if(isWinner(row,col,board,colour)){
+            alert(colour + " is the winner");
+          }
+          //Check we can still play
+          if(!canPlay(board)){
+            alert("GAME OVER --> DRAW");
+          }
+
+          turn++;
+        }(canvas,board,evt);
+      }, false);
+    });
+
+    // Check if we have 4 connected horizontally, vertically or diagonally
+    // Start at bottom of board and if the piece is the colour check
+    // going to the right and and up and in the diagonals. If the colour
+    // is not the players colour continue onto next piece and set count = 0
+    function isWinner(row,col,board,colour){
+      var count = 0;
+      for(var r=6; r>=0; r--){
+        for(var c=0; c<NUM_OF_COLS; c++){
+          if(board[r][c] === colour){
+            count = 0;
+            //Check going right
+            var c_temp = c;
+            while(c_temp < NUM_OF_COLS && colour === board[r][c_temp]){
+              count++
+              if(count===4)
+                return true;
+              c_temp++;
+            }
+
+            // Check going up
+            var r_temp = r;
+            count = 0;
+            while (r_temp >= 0 && colour === board[r_temp][c]){
+              count++;
+              if(count===4){
+                return true;
+              }
+              r_temp--;
+            }
+
+            //Check diagonallys
+            // Check NE direction
+            r_temp = r;
+            c_temp = c;
+            count=0;
+            while (r_temp >= 0 && c_temp >= 0 && colour === board[r_temp][c_temp]){
+              count++;
+              if(count===4){
+                return true;
+              }
+              r_temp--;
+              c_temp--;
+            }
+            // Check NW direction
+            r_temp = r;
+            c_temp = c;
+            count = 0;
+            while (r_temp >= 0 && c_temp < NUM_OF_COLS && colour === board[r_temp][c_temp]){
+              count++;
+              if(count===4){
+                return true;
+              }
+              r_temp--;
+              c_temp++;
+            }
+          }
+        }
+      }
+      return false;
+    }
+    //Check we can still play just scans top elements (row 0) that it isnt full
+    function canPlay(board){
+      for(var col=0; col<NUM_OF_ROWS; col++){
+        if(board[0][col] === "white")
+          return true;
+      }
+      return false;
+    }
+
+    // Drop piece into position checking for pieces already inserted
+    // We have the column from the mouse click event we need to determine
+    // what row it will go in
+    function dropPiece(board, col, colour){
+      var row = 6;
+      while(row>=0){
+        if(board[row][col] === "white"){
+          break;
+        }
+        row--;
+      }
+      // If column is full alert user of invalid move
+      if(row===-1){
+        alert("Invalid Move");
+        return -1;  //Indicates invalid move and its still same players turn
+      }
+      //console.table(board);
+      board[row][col] = colour;
+    }
+
+    // Draw Blue Background
+    function drawBackground(){
+      var canvas = document.getElementById("game");
+      //Check Browser supports Canvas Element
+      if(canvas.getContext){
+        var ctx = canvas.getContext("2d");
+
+        //ctx.beginPath();
+        ctx.fillStyle = "rgb(0,0,200)";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.stroke();
+      } else {
+        console.log("NO CANVAS SUPPORT");
+      }
+    }
+
+    // Draw the circular pieces
+    function draw(r,c, color_piece){
+      var canvas = document.getElementById("game");
+      //Check Browser supports Canvas Element
+      if(canvas.getContext){
+        var ctx = canvas.getContext("2d");
+
+        var radius = 40;
+        var offset = 10;  //offset to move pieces away from edge
+        var centerX = c * 100 + radius + offset;
+        var centerY = r * 100 + radius + offset;
+
+        // Draw Circular Pieces
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+        ctx.fillStyle = color_piece;
+        ctx.fill();
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = '#000';
+        ctx.stroke();
+      } else {
+          console.log("NO CANVAS SUPPORT");
+      }
+    }
+
+    // Get Mouse Position of click, getBoundingRect() takes care
+    // of the inherint offset on different browsers
+    function getMousePos(canvas, evt) {
+      var rect = canvas.getBoundingClientRect();
+      return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+      };
+    }
+    </script>
+  </body>
+</html>
